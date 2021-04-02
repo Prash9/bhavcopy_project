@@ -3,9 +3,13 @@
 <div id="app" class="container-fluid">
     <nav class="navbar navbar-light navbar-fixed-top rounded" style="background-color: #e3f2fd;">
         <div class="navbar-brand"><strong>BhavCopy Equity</strong></div>
-        <form>
-            <input type="search" v-model="equityName" class="form-control" placeholder="Search Equity">
-            <p>[[answer]]</p>
+        
+        <form class="form-inline">
+            <div class="form-group">
+                <input type="search" v-model="equityName" class="form-control" placeholder="Search Equity"><br>
+                
+            </div>
+            <button type="button" class="btn btn-primary btn-rounded" v-on:click="downloadTableData">Download</button>
         </form>
     </nav>
     <div class="table-responsive">
@@ -31,31 +35,44 @@
         el: '#app',
         data: {
             equityName: "",
-            answer:"",
             tableData: {{ body|safe }}
         },
         watch: {
             equityName: function(oldText,newText){
-                this.answer="Typing..."
                 this.debounceFunction()
             }
         },
         created: function(){
-            this.debounceFunction = _.debounce(this.gettableData,500)
+            this.debounceFunction = _.debounce(this.getTableData,500)
         },
         methods: {
-            gettableData: function(){
-                this.answer="Fetching Data"
+            getTableData: function(){
                 axios.get('http://localhost:8000/bhavcopy/?render=0&filter='+this.equityName)
                     .then(response => {
-                        this.answer = ""
                         this.tableData=response.data.body
                     })
                     .catch(error => {
-                        this.answer = 'Sorry could not fetch data.'
                         this.tableData=[]
                     })
+            },
+            downloadTableData: function(){
+                axios.get('http://localhost:8000/bhavcopy/?download=1&render=0&filter='+this.equityName,
+                        {responseType: 'blob'}
+                    )
+                    .then(response => {
+                        const blob = new Blob([response.data],{ type: response.headers['content-type'] })
+                        const fname = response.headers['content-disposition']
+                        const link = document.createElement('a')
+                        link.href = URL.createObjectURL(blob)
+                        link.download = response.headers['content-disposition'].substring(fname.indexOf('"') + 1, fname.lastIndexOf('"'));
+                        link.click()
+                        URL.revokeObjectURL(link.href)  
+                        //console.log(response.headers['content-disposition'],response.headers['content-type'])
+                    }).catch(error => {
+                        alert("Failed to Download")
+                    })
             }
+
 
         }
     })
