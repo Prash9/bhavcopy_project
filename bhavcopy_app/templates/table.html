@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="app" class="container-fluid">
+    <nav class="navbar navbar-light navbar-fixed-top rounded" style="background-color: #e3f2fd;">
+        <div class="navbar-brand"><strong>BhavCopy Equity</strong></div>
+        <form>
+            <input type="search" v-model="equityName" class="form-control" placeholder="Search Equity">
+            <p>[[answer]]</p>
+        </form>
+    </nav>
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead class="thead-dark">
+                {% for title in headers %}
+                    <th>{{title}}</th>
+                {% endfor %}
+            </thead>
+            <tbody v-if="tableData.length">
+                <tr v-for="key in tableData">
+                    <td v-for="val in key">
+                        [[ val ]]
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+    new Vue({
+        delimiters: ["[[","]]"],
+        el: '#app',
+        data: {
+            equityName: "",
+            answer:"",
+            tableData: {{ body|safe }}
+        },
+        watch: {
+            equityName: function(oldText,newText){
+                this.answer="Typing..."
+                this.debounceFunction()
+            }
+        },
+        created: function(){
+            this.debounceFunction = _.debounce(this.gettableData,500)
+        },
+        methods: {
+            gettableData: function(){
+                this.answer="Fetching Data"
+                axios.get('http://localhost:8000/bhavcopy/?render=0&filter='+this.equityName)
+                    .then(response => {
+                        this.answer = ""
+                        this.tableData=response.data.body
+                    })
+                    .catch(error => {
+                        this.answer = 'Sorry could not fetch data.'
+                        this.tableData=[]
+                    })
+            }
+
+        }
+    })
+
+</script>
+{% endblock %}
