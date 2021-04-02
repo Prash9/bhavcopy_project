@@ -15,7 +15,7 @@ class Equity():
     def __repr__(self):
         return f"Equity()"
     def _read_file(self,file_name):
-        df=pd.read_csv(os.path.join(settings.STATICFILES_DIRS[0], file_name),
+        df=pd.read_csv(os.path.join(settings.STATIC_ROOT, file_name),
                     usecols=Equity.headers)
         return df 
 

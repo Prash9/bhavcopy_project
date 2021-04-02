@@ -18,7 +18,7 @@ def display_bhavcopy(request):
     body=eq.get_bhavcopy(filter_by=filter_by)
     data = {
         "headers": eq.headers,
-        "body": body[:100],
+        "body": body,
     }
     if render_page=="1":
         return render(request,"table.html",data)
