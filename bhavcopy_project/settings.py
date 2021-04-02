@@ -24,9 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'x^&n317$09-0rhwigc1)r@ilm$9)=pu^d_9fx_rw8lrn)hcrxh'
-REDIS_HOST="localhost"
-REDIS_PORT="6379"
+SECRET_KEY=os.getenv("SECRET_KEY") 
+REDIS_HOST=os.getenv("REDIS_HOST")
+REDIS_PORT=os.getenv("REDIS_PORT")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
