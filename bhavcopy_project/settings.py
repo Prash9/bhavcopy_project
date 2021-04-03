@@ -28,7 +28,7 @@ SECRET_KEY=os.getenv("SECRET_KEY")
 REDIS_HOST=os.getenv("REDIS_HOST")
 REDIS_PORT=os.getenv("REDIS_PORT")
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
 
@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'bhavcopy_app',
+    'bhavcopy_app.apps.BhavcopyAppConfig',
 ]
 
 MIDDLEWARE = [

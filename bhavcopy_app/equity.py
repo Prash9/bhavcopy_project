@@ -1,6 +1,8 @@
-import os
+import os,zipfile
+from datetime import datetime
 import pandas as pd
 import redis
+import requests
 from django.conf import settings
 from django.http import HttpResponse
 
@@ -31,9 +33,35 @@ class Equity():
                     pipe.multi()
             pipe.execute()
     
+    def _fetch_bhavcopy_from_source(self):
+        filename=f"EQ{datetime.now().strftime('%d%m%y')}_CSV.ZIP"
+        # filename="EQ010421_CSV.ZIP"
+        url = f"https://www.bseindia.com/download/BhavCopy/Equity/{filename}"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36'
+            }
+        try:
+            response = requests.get(url,headers=headers)
+            if response.status_code==200:
+                path=os.path.join(settings.STATIC_ROOT,filename)
+                with open(path,"wb") as f:
+                    f.write(response.content)
+                with zipfile.ZipFile(path, 'r') as f:
+                    f.extractall(settings.STATIC_ROOT)
+                return filename.split(".")[0].replace("_",".")
+        except Exception as e:
+            print(e)
+        finally:
+            if os.path.exists(path):
+                os.remove(path)
+        return ""
+    
     def update_bhavcopy(self):
-        data=self._read_file("equity.csv")
-        self._save_data_to_redis(data)
+        filename=self._fetch_bhavcopy_from_source()
+        if filename:
+            data=self._read_file(filename)
+            self._save_data_to_redis(data)
+            print("UPDATED NEW FILE")
 
     def get_bhavcopy(self,filter_by=""):
         filter_by = f"*{filter_by.upper()}*" if filter_by else None
