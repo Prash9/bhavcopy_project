@@ -2,7 +2,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from .equity import Equity
 
 def test():
-    print("ASDKLASJDKLASDJLKA")
+    print("Scheduler beat...")
 
 def start():
     scheduler = BackgroundScheduler()

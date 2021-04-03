@@ -42,8 +42,8 @@ class Equity():
             }
         try:
             response = requests.get(url,headers=headers)
+            path=os.path.join(settings.STATIC_ROOT,filename)
             if response.status_code==200:
-                path=os.path.join(settings.STATIC_ROOT,filename)
                 with open(path,"wb") as f:
                     f.write(response.content)
                 with zipfile.ZipFile(path, 'r') as f:
@@ -61,6 +61,7 @@ class Equity():
         if filename:
             data=self._read_file(filename)
             self._save_data_to_redis(data)
+            os.remove(os.path.join(settings.STATIC_ROOT,filename))
             print("UPDATED NEW FILE")
 
     def get_bhavcopy(self,filter_by=""):
