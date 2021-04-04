@@ -7,7 +7,7 @@ services:
         - "6379:6379"
   django:
     build: .
-    image: bhavcopy_django
+    image: prash9/bhavcopyequity
     container_name: django
     env_file:
       - .env
