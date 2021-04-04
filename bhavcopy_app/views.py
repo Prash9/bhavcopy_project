@@ -15,14 +15,15 @@ def display_bhavcopy(request):
     # print(render_page,filter_by)
     eq=Equity()
     # eq.update_bhavcopy()
-    body=eq.get_bhavcopy(filter_by=filter_by)
+    body,bhavcopy_date=eq.get_bhavcopy(filter_by=filter_by)
     data = {
         "headers": eq.headers,
         "body": body,
+        "bhavcopy_date":bhavcopy_date
     }
     if render_page=="1":
         return render(request,"table.html",data)
     if download=="1":
-        return eq.download_file(data["body"])
+        return eq.download_file(data["body"],data["bhavcopy_date"])
 
     return JsonResponse(data)

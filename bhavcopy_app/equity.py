@@ -24,9 +24,17 @@ class Equity():
                     usecols=Equity.headers)
         return df 
 
-    def _save_data_to_redis(self,data):
+    def _save_data_to_redis(self,data,date):
+        '''
+            Parameters:
+                data (Pandas dataframe): Dataframe contains csv data for bhavcopy
+                date (datetime object): Date for which the 
+                                        bhavcopy is fetched
+            Returns: None
+        '''
         try:
             rd.flushall()
+            rd.set("BHAVCOPY_DATE",date.strftime("%d-%m-%Y"))
             with rd.pipeline() as pipe:
                 pipe.multi()
                 for index ,row in data.iterrows():
@@ -39,14 +47,22 @@ class Equity():
         except Exception as e:
             logger.error(traceback.format_exc())
     
-    def _fetch_bhavcopy_from_source(self):
-        filename=f"EQ{datetime.now().strftime('%d%m%y')}_CSV.ZIP"
-        # filename="EQ010421_CSV.ZIP"
-        url = f"https://www.bseindia.com/download/BhavCopy/Equity/{filename}"
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36'
-            }
+    def _fetch_bhavcopy_from_source(self,date):
+        '''
+            Parameters:
+                date (datetime object): Date for which the 
+                                        bhavcopy to be fetch from source
+            Returns: 
+                filename (str): .csv filename if the file was downloaded
+                                from source else empty string is returned
+        '''
         try:
+            filename=f"EQ{date.strftime('%d%m%y')}_CSV.ZIP"
+            # filename="EQ010421_CSV.ZIP"
+            url = f"https://www.bseindia.com/download/BhavCopy/Equity/{filename}"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36'
+                }
             response = requests.get(url,headers=headers)
             path=os.path.join(settings.STATIC_ROOT,filename)
             if response.status_code==200:
@@ -62,15 +78,29 @@ class Equity():
                 os.remove(path)
         return ""
     
-    def update_bhavcopy(self):
-        filename=self._fetch_bhavcopy_from_source()
+    def update_bhavcopy(self,date):
+        '''
+            Parameters:
+                date (datetime object): Date for which the 
+                                        bhavcopy to be fetch from source
+            Returns: None
+        '''
+        filename=self._fetch_bhavcopy_from_source(date)
         if filename:
             data=self._read_file(filename)
-            self._save_data_to_redis(data)
+            self._save_data_to_redis(data,date)
             os.remove(os.path.join(settings.STATIC_ROOT,filename))
             logger.debug("UPDATED NEW FILE")
 
     def get_bhavcopy(self,filter_by=""):
+        '''
+            Parameters:
+                filter_by (str): equity name pattern to filter
+            Returns:
+                ouptut (List[Dict]): Bhavcopy equity data from Redis
+                date (str): dd-mm-yyyy formated string
+
+        '''
         filter_by = f"*{filter_by.upper()}*" if filter_by else None
         matched_keys=[]
         # print(filter_by)
@@ -86,10 +116,20 @@ class Equity():
                     output.extend(pipe.execute())
                     pipe.multi()
             output.extend(pipe.execute())
-        return output
+        date=rd.get("BHAVCOPY_DATE") or datetime.now().strftime('%d-%m-%Y')
+        return output,date
     
-    def download_file(self,data):
+    def download_file(self,data,date):
+        '''
+            Parameters:
+                data (List[Dict]): Data for download
+                date (str): dd-mm-yyyy formated string 
+            Returns:
+                response (httpResponse): Return http response object with
+                                        csv attachment type
+        '''
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="bhavcopy_equity.csv"'
+        filename=f"bhavcopy_equity_{date}.csv"
+        response['Content-Disposition'] = f"attachment; filename={filename}"
         pd.DataFrame(data).to_csv(path_or_buf=response,index=False)
         return response

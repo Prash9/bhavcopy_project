@@ -2,7 +2,7 @@
 {% block content %}
 <div id="app" class="container-fluid">
     <nav class="navbar navbar-light navbar-fixed-top rounded" style="background-color: #e3f2fd;">
-        <div class="navbar-brand"><strong>BhavCopy Equity</strong></div>
+        <div class="navbar-brand"><strong>BhavCopy Equity {{ bhavcopy_date }}</strong></div>
         
         <form class="form-inline">
             <div class="form-group">
@@ -30,6 +30,7 @@
     </div>
 </div>
 <script>
+    const server="http://localhost:8000/bhavcopy/"
     new Vue({
         delimiters: ["[[","]]"],
         el: '#app',
@@ -47,7 +48,7 @@
         },
         methods: {
             getTableData: function(){
-                axios.get('http://localhost:8000/bhavcopy/?render=0&filter='+this.equityName)
+                axios.get(server+'?render=0&filter='+this.equityName)
                     .then(response => {
                         this.tableData=response.data.body
                     })
@@ -56,7 +57,7 @@
                     })
             },
             downloadTableData: function(){
-                axios.get('http://localhost:8000/bhavcopy/?download=1&render=0&filter='+this.equityName,
+                axios.get(server+'?download=1&render=0&filter='+this.equityName,
                         {responseType: 'blob'}
                     )
                     .then(response => {
