@@ -1,4 +1,4 @@
-import os,zipfile
+import os,zipfile,traceback,logging
 from datetime import datetime
 import pandas as pd
 import redis
@@ -6,8 +6,11 @@ import requests
 from django.conf import settings
 from django.http import HttpResponse
 
-rd = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT,decode_responses=True)
-
+logger = logging.getLogger(__name__)
+try:
+    rd = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT,decode_responses=True)
+except Exception as e:
+    logger.error(traceback.format_exe())
 
 class Equity():
     headers=["SC_CODE","SC_NAME",\
@@ -22,16 +25,19 @@ class Equity():
         return df 
 
     def _save_data_to_redis(self,data):
-        rd.flushall()
-        with rd.pipeline() as pipe:
-            pipe.multi()
-            for index ,row in data.iterrows():
-                row=dict(row)
-                pipe.hset(row['SC_NAME'].strip(), mapping=row)
-                if (index+1) % 1000 == 0:
-                    pipe.execute()
-                    pipe.multi()
-            pipe.execute()
+        try:
+            rd.flushall()
+            with rd.pipeline() as pipe:
+                pipe.multi()
+                for index ,row in data.iterrows():
+                    row=dict(row)
+                    pipe.hset(row['SC_NAME'].strip(), mapping=row)
+                    if (index+1) % 1000 == 0:
+                        pipe.execute()
+                        pipe.multi()
+                pipe.execute()
+        except Exception as e:
+            logger.error(traceback.format_exc())
     
     def _fetch_bhavcopy_from_source(self):
         filename=f"EQ{datetime.now().strftime('%d%m%y')}_CSV.ZIP"
@@ -50,7 +56,7 @@ class Equity():
                     f.extractall(settings.STATIC_ROOT)
                 return filename.split(".")[0].replace("_",".")
         except Exception as e:
-            print(e)
+            logger.error(traceback.format_exc())
         finally:
             if os.path.exists(path):
                 os.remove(path)
@@ -62,7 +68,7 @@ class Equity():
             data=self._read_file(filename)
             self._save_data_to_redis(data)
             os.remove(os.path.join(settings.STATIC_ROOT,filename))
-            print("UPDATED NEW FILE")
+            logger.debug("UPDATED NEW FILE")
 
     def get_bhavcopy(self,filter_by=""):
         filter_by = f"*{filter_by.upper()}*" if filter_by else None
