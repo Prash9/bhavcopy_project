@@ -129,7 +129,7 @@ class Equity():
                                         csv attachment type
         '''
         response = HttpResponse(content_type='text/csv')
-        filename=f"bhavcopy_equity_{date}.csv"
+        filename=f'"bhavcopy_equity_{date}.csv"'
         response['Content-Disposition'] = f"attachment; filename={filename}"
         pd.DataFrame(data).to_csv(path_or_buf=response,index=False)
         return response
